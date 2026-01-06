@@ -1,0 +1,112 @@
+import google.generativeai as genai
+import logging
+import json
+import re
+
+logger = logging.getLogger(__name__)
+
+
+class ScamDetectionService:
+    def __init__(self, api_key):
+        """Initialize Gemini AI service"""
+        genai.configure(api_key=api_key)
+        # Use stable Gemini Pro model for production reliability
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        logger.info("Scam Detection Service initialized with Gemini AI")
+
+    def analyze_conversation(self, conversation_text):
+        """
+        Analyze conversation text to detect scam patterns
+        Returns: dict with status, confidence_score, reason, and red_flags
+        """
+        try:
+            prompt = self._build_analysis_prompt(conversation_text)
+            
+            response = self.model.generate_content(prompt)
+            result = self._parse_analysis_response(response.text)
+            
+            logger.info(f"Scam analysis completed: {result['status']} (confidence: {result['confidence_score']})")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Scam analysis error: {str(e)}")
+            raise Exception(f"Failed to analyze conversation: {str(e)}")
+
+    def _build_analysis_prompt(self, conversation_text):
+        """Build detailed prompt for scam detection"""
+        return f"""คุณเป็นผู้เชี่ยวชาญในการวิเคราะห์และตรวจจับมิจฉาชีพออนไลน์ในประเทศไทย 
+วิเคราะห์บทสนทนาต่อไปนี้และประเมินว่ามีความเป็นไปได้แค่ไหนที่บุคคลที่โทรมาเป็นมิจฉาชีพหรือสแกมเมอร์
+
+บทสนทนา:
+{conversation_text}
+
+กรุณาวิเคราะห์และตอบกลับในรูปแบบ JSON ที่มีโครงสร้างดังนี้:
+{{
+  "confidence_score": <ตัวเลขระหว่าง 0.0 - 1.0 ที่แสดงความมั่นใจว่าเป็นสแกม>,
+  "status": "<danger|warning|normal>",
+  "reason": "<คำอธิบายโดยละเอียดเป็นภาษาไทยว่าทำไมถึงให้คะแนนนี้>",
+  "red_flags": [<รายการสัญญาณเตือนภัยที่พบในบทสนทนา>]
+}}
+
+เกณฑ์การประเมิน:
+- danger: มีความเป็นไปได้สูงมาก (>= 0.75) ที่เป็นมิจฉาชีพ พบสัญญาณเตือนภัยหลายอย่าง
+- warning: มีความเป็นไปได้ปานกลาง (0.40 - 0.74) พบสัญญาณน่าสงสัยบางอย่าง
+- normal: ความเป็นไปได้ต่ำ (< 0.40) ไม่พบสัญญาณเตือนภัยที่สำคัญ
+
+สัญญาณเตือนภัยที่ควรระวัง:
+1. ขอเงินโดยตรงหรือขอโอนเงิน
+2. สร้างความเร่งรีบหรือกดดันให้ตัดสินใจทันที
+3. อ้างว่าเป็นเจ้าหน้าที่จากหน่วยงานราชการ ธนาคาร หรือบริษัทที่เชื่อถือได้
+4. ขอข้อมูลส่วนตัวที่ละเอียดอ่อน เช่น รหัสผ่าน PIN เลขบัตรประชาชน
+5. เสนอรางวัลหรือโปรโมชั่นที่ดูดีเกินจริง
+6. มีภาษาที่สร้างความกลัว เช่น คุณจะถูกจับ บัญชีจะถูกปิด
+7. มีข้อผิดพลาดทางภาษาหรือไวยากรณ์มากผิดปกติ
+8. ขอให้ดาวน์โหลดแอปพลิเคชันหรือคลิกลิงก์ที่ไม่รู้จัก
+9. อ้างว่าเป็นญาติหรือเพื่อนที่เปลี่ยนเบอร์โทรศัพท์
+10. ใช้เทคนิคทางสังคม (Social Engineering) เพื่อหลอกลวง
+
+ตอบกลับเฉพาะ JSON เท่านั้น ไม่ต้องมีข้อความอื่น"""
+
+    def _parse_analysis_response(self, response_text):
+        """Parse Gemini's response to extract structured data"""
+        try:
+            # Try to extract JSON from response
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                result = json.loads(json_match.group())
+            else:
+                result = json.loads(response_text)
+            
+            # Validate and normalize the response
+            confidence_score = float(result.get('confidence_score', 0.5))
+            confidence_score = max(0.0, min(1.0, confidence_score))  # Clamp between 0-1
+            
+            status = result.get('status', '').lower()
+            if status not in ['danger', 'warning', 'normal']:
+                # Auto-classify based on confidence score
+                if confidence_score >= 0.75:
+                    status = 'danger'
+                elif confidence_score >= 0.40:
+                    status = 'warning'
+                else:
+                    status = 'normal'
+            
+            return {
+                'confidence_score': confidence_score,
+                'status': status,
+                'reason': result.get('reason', 'ไม่สามารถวิเคราะห์เหตุผลได้'),
+                'red_flags': result.get('red_flags', [])
+            }
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: {str(e)}")
+            # Return default safe result
+            return {
+                'confidence_score': 0.5,
+                'status': 'warning',
+                'reason': 'ไม่สามารถวิเคราะห์บทสนทนาได้อย่างสมบูรณ์ กรุณาระมัดระวัง',
+                'red_flags': ['ระบบไม่สามารถวิเคราะห์ได้']
+            }
+        except Exception as e:
+            logger.error(f"Error parsing response: {str(e)}")
+            raise

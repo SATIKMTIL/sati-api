@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: sati-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
+      MONGO_INITDB_DATABASE: sati_api
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - sati-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # SATI API Application
+  sati-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sati-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Flask Configuration
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ACCESS_TOKEN_EXPIRES: ${JWT_ACCESS_TOKEN_EXPIRES:-86400}
+
+      # MongoDB Configuration
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-changeme}@mongodb:27017/sati_api?authSource=admin
+
+      # Google Gemini API
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+
+      # Server Configuration
+      PORT: 5000
+      HOST: 0.0.0.0
+
+      # Swagger Configuration
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      API_HOST: ${API_HOST:-localhost:5000}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - sati-network
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/v1/health', timeout=5)" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: sati-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - sati-api
+    networks:
+      - sati-network
+    profiles:
+      - production
+
+networks:
+  sati-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local

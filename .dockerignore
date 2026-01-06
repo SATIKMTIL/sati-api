@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+ENV/
+virtualenv/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.docker
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+logs/
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Database
+*.db
+*.sqlite
+mongodb_data/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Swagger temp files
+swagger_specs/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Unnecessary files
+*.bak
+*.tmp
+*.temp
