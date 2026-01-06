@@ -11,7 +11,8 @@ class ScamDetectionService:
         """Initialize Gemini AI service"""
         genai.configure(api_key=api_key)
         # Use stable Gemini Pro model for production reliability
-        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        print(api_key)
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
         logger.info("Scam Detection Service initialized with Gemini AI")
 
     def analyze_conversation(self, conversation_text):
