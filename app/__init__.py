@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flasgger import Swagger
@@ -38,6 +38,15 @@ def create_app(config_name='development'):
     
     # Initialize JWT
     jwt = JWTManager(app)
+    
+    # Auto-add Bearer prefix for Swagger compatibility
+    # This allows users to enter just the token without typing "Bearer "
+    @app.before_request
+    def fix_authorization_header():
+        """Add Bearer prefix if missing (for Swagger UI compatibility)"""
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header and not auth_header.startswith('Bearer ') and auth_header.startswith('eyJ'):
+            request.environ['HTTP_AUTHORIZATION'] = f'Bearer {auth_header}'
     
     # JWT error handlers
     @jwt.expired_token_loader

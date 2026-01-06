@@ -18,7 +18,7 @@ class Database:
     def initialize(self, mongo_uri, db_name=None):
         """Initialize MongoDB connection"""
         try:
-            self._client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+            self._client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
             # Test connection
             self._client.admin.command('ping')
             

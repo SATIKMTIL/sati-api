@@ -300,7 +300,7 @@ def get_current_user():
     tags:
       - Authentication
     security:
-      - Bearer: []
+      - BearerAuth: []
     responses:
       200:
         description: Current user information

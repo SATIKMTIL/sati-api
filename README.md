@@ -1,452 +1,354 @@
-# SATI API - Scam Detection System
+# 🛡️ SATI API
 
-ระบบตรวจจับมิจฉาชีพด้วย AI สำหรับการวิเคราะห์บทสนทนาที่น่าสงสัย
+**Scam Analysis & Threat Intelligence API** - ระบบ AI สำหรับวิเคราะห์และตรวจจับข้อความหลอกลวง (Scam) ด้วย Google Gemini AI
 
-## Features
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green.svg)](https://mongodb.com)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-- 🔐 **Authentication System**: User registration and login with JWT
-- 🤖 **AI-Powered Scam Detection**: Powered by Google Gemini AI
-- 📊 **Scam Analysis**: Analyze conversations and get risk levels (danger, warning, normal)
-- 📝 **Report History**: Track all scam detection reports
-- 📈 **Statistics**: Get insights on scam detection patterns
-- 🗄️ **MongoDB Integration**: Persistent data storage
-- 📚 **Interactive API Documentation**: Swagger/OpenAPI UI for testing endpoints
+---
 
-## Tech Stack
+## 📋 ภาพรวม
 
-- **Backend**: Flask (Python)
-- **Database**: MongoDB
-- **AI**: Google Gemini API
-- **Authentication**: JWT (Flask-JWT-Extended)
-- **API**: RESTful API
-- **Documentation**: Swagger/OpenAPI (Flasgger)
+SATI API เป็น RESTful API ที่พัฒนาด้วย Flask และใช้ Google Gemini AI ในการวิเคราะห์ข้อความเพื่อตรวจจับรูปแบบการหลอกลวงต่างๆ เช่น:
 
-## Project Structure
+- 🎣 **Phishing** - ข้อความหลอกเอาข้อมูลส่วนตัว
+- 💸 **Financial Scam** - หลอกลวงทางการเงิน
+- 🎁 **Prize Scam** - หลอกลวงเรื่องรางวัล/โชคดี
+- 💼 **Job Scam** - หลอกลวงเรื่องงาน
+- 💕 **Romance Scam** - หลอกลวงด้วยความรัก
+- 📦 **Delivery Scam** - หลอกลวงเรื่องจัดส่งสินค้า
+
+---
+
+## ✨ คุณสมบัติหลัก
+
+| Feature | Description |
+|---------|-------------|
+| 🤖 **AI-Powered Analysis** | วิเคราะห์ด้วย Google Gemini AI |
+| 🔐 **JWT Authentication** | ระบบยืนยันตัวตนด้วย JWT |
+| 📊 **History Tracking** | บันทึกประวัติการวิเคราะห์ |
+| 📈 **Statistics** | สถิติการใช้งานของผู้ใช้ |
+| 📝 **Swagger Docs** | เอกสาร API แบบ Interactive |
+| 🚦 **Rate Limiting** | ป้องกันการใช้งานเกินขีดจำกัด |
+| 🐳 **Docker Ready** | พร้อม Deploy ด้วย Docker |
+
+---
+
+## 🏗️ สถาปัตยกรรม
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Nginx                                │
+│                    (Reverse Proxy)                          │
+│              Rate Limiting / Load Balancing                 │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      SATI API (Flask)                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │    Auth     │  │    Scam     │  │     Middleware      │ │
+│  │   Module    │  │  Detection  │  │ (JWT, Rate Limit)   │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+         │                    │
+         ▼                    ▼
+┌─────────────────┐   ┌─────────────────┐
+│    MongoDB      │   │  Google Gemini  │
+│   (Database)    │   │      AI         │
+└─────────────────┘   └─────────────────┘
+```
+
+---
+
+## 🚀 การติดตั้ง
+
+### ข้อกำหนดเบื้องต้น
+
+- Python 3.11+
+- MongoDB 7.0+
+- Docker & Docker Compose (สำหรับ Container)
+- Google API Key (สำหรับ Gemini AI)
+
+### วิธีที่ 1: Docker Compose (แนะนำ)
+
+```bash
+# Clone repository
+git clone https://github.com/your-username/sati-api.git
+cd sati-api
+
+# สร้างไฟล์ .env
+cp .env.example .env
+
+# แก้ไขค่าใน .env (โดยเฉพาะ GOOGLE_API_KEY)
+nano .env
+
+# รัน containers
+docker compose up -d
+
+# ดู logs
+docker compose logs -f
+```
+
+### วิธีที่ 2: การติดตั้งแบบ Manual
+
+```bash
+# Clone repository
+git clone https://github.com/your-username/sati-api.git
+cd sati-api
+
+# สร้าง virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# หรือ venv\Scripts\activate  # Windows
+
+# ติดตั้ง dependencies
+pip install -r requirements.txt
+
+# สร้างไฟล์ .env
+cp .env.example .env
+nano .env
+
+# รันแอพพลิเคชั่น
+python app.py
+```
+
+---
+
+## ⚙️ การตั้งค่า Environment Variables
+
+สร้างไฟล์ `.env` จาก `.env.example` และกำหนดค่าต่อไปนี้:
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `FLASK_ENV` | โหมดการทำงาน (`development`, `production`) | ❌ | `development` |
+| `SECRET_KEY` | Flask secret key | ✅ (production) | `dev-secret-key...` |
+| `JWT_SECRET_KEY` | JWT signing key | ✅ (production) | `jwt-secret-key...` |
+| `JWT_ACCESS_TOKEN_EXPIRES` | อายุ token (วินาที) | ❌ | `86400` (24 ชม.) |
+| `MONGO_URI` | MongoDB connection string | ❌ | `mongodb://localhost:27017/sati_api` |
+| `GOOGLE_API_KEY` | Google Gemini API key | ✅ | - |
+| `PORT` | Port ที่รัน server | ❌ | `3000` |
+| `HOST` | Host address | ❌ | `0.0.0.0` |
+
+---
+
+## 📚 API Endpoints
+
+### 🔐 Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/auth/register` | ลงทะเบียนผู้ใช้ใหม่ |
+| `POST` | `/api/v1/auth/login` | เข้าสู่ระบบ |
+| `GET` | `/api/v1/auth/me` | ดูข้อมูลผู้ใช้ปัจจุบัน |
+
+### 🛡️ Scam Detection
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/scam/analyze` | วิเคราะห์ข้อความ |
+| `GET` | `/api/v1/scam/history` | ดูประวัติการวิเคราะห์ |
+| `GET` | `/api/v1/scam/history/:id` | ดูรายละเอียดรายงาน |
+| `GET` | `/api/v1/scam/statistics` | ดูสถิติผู้ใช้ |
+
+### ❤️ Health Check
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | ตรวจสอบสถานะ service |
+| `GET` | `/api/v1/health` | Health check endpoint |
+
+### 📖 Documentation
+
+- **Swagger UI**: [http://localhost:3000/apidocs](http://localhost:3000/apidocs)
+
+---
+
+## 💡 ตัวอย่างการใช้งาน
+
+### ลงทะเบียนผู้ใช้
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!",
+    "name": "John Doe"
+  }'
+```
+
+### เข้าสู่ระบบ
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+### วิเคราะห์ข้อความ
+
+```bash
+curl -X POST http://localhost:3000/api/v1/scam/analyze \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "text": "คุณได้รับรางวัล iPhone 15 Pro Max! กรุณาโอนค่าจัดส่ง 500 บาท"
+  }'
+```
+
+### ตัวอย่าง Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "report_id": "507f1f77bcf86cd799439011",
+    "is_scam": true,
+    "confidence": 0.95,
+    "scam_type": "prize_scam",
+    "risk_level": "high",
+    "analysis": "ข้อความนี้มีลักษณะเป็นการหลอกลวงประเภทรางวัล...",
+    "red_flags": [
+      "ขอให้โอนเงิน",
+      "รางวัลที่ไม่ได้สมัคร",
+      "สร้างความเร่งด่วน"
+    ],
+    "recommendation": "ไม่ควรโอนเงินหรือให้ข้อมูลส่วนตัว"
+  }
+}
+```
+
+---
+
+## 🐳 Docker Commands
+
+```bash
+# Build และ Start containers
+docker compose up -d --build
+
+# Stop containers
+docker compose down
+
+# ดู logs
+docker compose logs -f sati-api
+
+# เข้า container
+docker compose exec sati-api sh
+
+# Restart services
+docker compose restart
+```
+
+---
+
+## 📁 โครงสร้างโปรเจค
 
 ```
 sati-api/
 ├── app/
-│   ├── __init__.py              # Flask app factory
-│   ├── auth/                    # Authentication module
-│   │   ├── __init__.py
-│   │   ├── routes.py           # Login, register, user endpoints
-│   │   └── models.py           # User model and validation
-│   ├── scam_detection/         # Scam detection module
-│   │   ├── __init__.py
-│   │   ├── routes.py           # Scam analysis endpoints
-│   │   ├── services.py         # Gemini AI integration
-│   │   └── models.py           # Scam report model
-│   ├── database/               # Database layer
-│   │   ├── __init__.py
-│   │   ├── connection.py       # MongoDB connection
-│   │   └── repositories.py    # Data access layer
-│   ├── middleware/             # Middleware
-│   │   ├── __init__.py
-│   │   ├── auth.py            # JWT authentication
-│   ├── schemas/               # Swagger schemas
-│   │   ├── __init__.py
-│   │   ├── auth_schemas.py    # Auth endpoint schemas
-│   │   └── scam_schemas.py    # Scam detection schemas
-│   └── utils/                 # Utilities
-│       ├── __init__.py
-│       ├── logger.py          # Logging setup
-│       └── helpers.py         # Helper functions
-├── config.py                   # Configuration
-├── swagger_config.py          # Swagger/OpenAPI clper functions
-├── config.py                   # Configuration
-├── app.py                      # Application entry point
-├── requirements.txt           # Python dependencies
-├── .env.example              # Environment variables example
-└── .gitignore               # Git ignore file
+│   ├── __init__.py          # Application factory
+│   ├── auth/                 # Authentication module
+│   │   ├── models.py         # User model
+│   │   └── routes.py         # Auth endpoints
+│   ├── scam_detection/       # Scam detection module
+│   │   ├── models.py         # Scam report model
+│   │   ├── routes.py         # Scam endpoints
+│   │   └── services.py       # AI analysis service
+│   ├── database/             # Database layer
+│   │   ├── connection.py     # MongoDB connection
+│   │   └── repositories.py   # Data repositories
+│   ├── middleware/           # Middleware
+│   │   ├── errors.py         # Error handlers
+│   │   └── rate_limit.py     # Rate limiting
+│   ├── schemas/              # Request/Response schemas
+│   └── utils/                # Utilities
+│       ├── helpers.py        # Helper functions
+│       └── logger.py         # Logging setup
+├── nginx/
+│   └── nginx.conf            # Nginx configuration
+├── app.py                    # Entry point
+├── config.py                 # Configuration
+├── swagger_config.py         # Swagger/OpenAPI config
+├── requirements.txt          # Python dependencies
+├── Dockerfile                # Docker image
+├── docker-compose.yml        # Docker Compose
+├── .env.example              # Environment template
+└── README.md                 # This file
 ```
 
-## Installation
+---
 
-### Option 1: Docker (Recommended) 🐳
+## 🔒 ความปลอดภัย
 
-The fastest way to get started! Docker handles all dependencies including MongoDB.
+- ✅ Password hashing ด้วย bcrypt
+- ✅ JWT-based authentication
+- ✅ Rate limiting ป้องกัน brute force
+- ✅ Input sanitization
+- ✅ CORS configuration
+- ✅ Security headers (via Nginx)
+- ✅ Non-root Docker user
+
+> ⚠️ **สำหรับ Production**: อย่าลืมเปลี่ยน `SECRET_KEY` และ `JWT_SECRET_KEY` ให้เป็นค่าที่ปลอดภัย!
+
+---
+
+## 🧪 การทดสอบ
 
 ```bash
-# 1. Copy environment file
-cp .env.docker .env
+# รัน tests (TODO: implement)
+python -m pytest tests/ -v
 
-# 2. Edit .env with your credentials
-# Required: GOOGLE_API_KEY, SECRET_KEY, JWT_SECRET_KEY
-
-# 3. Start all services
-docker-compose up -d
-
-# 4. Access the API
-# http://localhost:5000/api/docs
+# รัน tests with coverage
+python -m pytest tests/ --cov=app --cov-report=html
 ```
 
-**That's it!** MongoDB and the API are now running.
+---
 
-📖 See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for detailed Docker documentation.
+## 📊 Monitoring
 
-### Option 2: Manual Installation
+- **Health Check**: `GET /api/v1/health`
+- **Logs**: `docker compose logs -f`
+- การใช้งาน MongoDB สามารถ monitor ผ่าน MongoDB Compass หรือ CLI
 
-### Prerequisites
+---
 
-- Python 3.8+
-- MongoDB (local or cloud instance)
-- Google Gemini API Key
+## 🤝 การมีส่วนร่วม
 
-### Setup Steps
+1. Fork repository
+2. สร้าง feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit การเปลี่ยนแปลง (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. เปิด Pull Request
 
-1. **Clone the repository**
+---
 
-```bash
-git clone <repository-url>
-cd sati-api
-```
+## 📄 License
 
-2. **Create virtual environment**
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-```bash
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
-```
+---
 
-3. **Install dependencies**
+## 👥 ทีมพัฒนา
 
-```bash
-pip install -r requirements.txt
-```
+- **Developer**: SATI Team
 
-4. **Configure environment variables**
+---
 
-```bash
-# Copy .env.example to .env
-copy .env.example .env  # Windows
-cp .env.example .env    # macOS/Linux
-```
+## 📞 ติดต่อ
 
-Edit `.env` file with your credentials:
+- 📧 Email: support@sati.app
+- 🌐 Website: https://sati.app
+- 📖 Docs: [API Documentation](http://localhost:3000/apidocs)
 
-```env
-FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
-JWT_SECRET_KEY=your-jwt-secret-key-here
-MONGO_URI=mongodb://localhost:27017/sati_api
-GOOGLE_API_KEY=your-google-api-key-here
-```
+---
 
-5. **Run the application**
-
-```bash
-python Documentation (Swagger UI)
-
-### Accessing Interactive Documentation
-
-Once the application is running, access the **Swagger UI** for interactive API documentation and testing:
-
-```
-
-http://localhost:5000/api/docs
-
-```
-
-### Swagger UI Features
-
-- 📖 **Complete API Documentation**: All endpoints with detailed descriptions
-- 🧪 **Test API Directly**: Execute API calls from the browser
-- 🔒 **JWT Authentication**: Built-in token authorization
-- 📝 **Request/Response Examples**: See real examples for all endpoints
-- ✅ **Schema Validation**: View required fields and data types
-- 🌐 **Multi-language Support**: Thai and English descriptions
-
-### Using Swagger UI
-
-1. **Open Swagger UI** at `http://localhost:5000/api/docs`
-2. **Register a new account**:
-   - Find `POST /api/v1/auth/register` endpoint
-   - Click "Try it out"
-   - Fill in the request body
-   - Click "Execute"
-   - Copy the `access_token` from the response
-
-3. **Authorize with JWT**:
-   - Click the **Authorize 🔒** button (top right)
-   - Enter: `Bearer <your_access_token>`
-   - Click "Authorize" and close
-
-4. **Test Protected Endpoints**:
-   - Now you can test all authenticated endpoints
-   - Try `/api/v1/scam/analyze` to analyze a conversation
-   - View your history with `/api/v1/scam/history`
-
-### API Specification
-
-The OpenAPI specification is available at:
-```
-
-http://localhost:5000/apispec.json
-
-```
-
-You can import this into tools like:
-- Postman
-- Insomnia
-- VS Code REST Client extensions
-
-## API app.py
-```
-
-The API will be available at `http://localhost:5000`
-
-## API Endpoints
-
-### Authentication
-
-#### Register
-
-```http
-POST /api/v1/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "User Name"
-}
-```
-
-#### Login
-
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-#### Get Current User
-
-```http
-GET /api/v1/auth/me
-Authorization: Bearer <access_token>
-```
-
-### Scam Detection
-
-#### Analyze Conversation
-
-```http
-POST /api/v1/scam/analyze
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "conversation_text": "สวัสดีครับ ผมเป็นเจ้าหน้าที่ธนาคาร บัญชีของคุณมีปัญหา กรุณาโอนเงิน..."
-}
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "report_id": "507f1f77bcf86cd799439011",
-  "analysis": {
-    "status": "danger",
-    "confidence_score": 0.95,
-    "reason": "พบสัญญาณเตือนภัยหลายอย่าง...",
-    "red_flags": [
-      "อ้างว่าเป็นเจ้าหน้าที่ธนาคาร",
-      "ขอโอนเงินโดยตรง",
-      "สร้างความกลัว"
-    ]
-  }
-}
-```
-
-#### Get History
-
-```http
-GET /api/v1/scam/history?limit=50&skip=0
-Authorization: Bearer <access_token>
-```
-
-#### Get Report by ID
-
-```http
-GET /api/v1/scam/report/<report_id>
-Authorization: Bearer <access_token>
-```
-
-#### Get Statistics
-
-```http
-GET /api/v1/scam/statistics
-Authorization: Bearer <access_token>
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "statistics": {
-    "total": 100,
-    "danger": 30,
-    "warning": 45,
-    "normal": 25
-  }
-}
-```
-
-### Health Check
-
-```http
-GET /
-GET /api/v1/health
-```
-
-## Risk Levels
-
-- **🔴 Danger** (confidence ≥ 0.75): High probability of scam, multiple red flags detected
-- **🟡 Warning** (0.40 ≤ confidence < 0.75): Suspicious patterns found, be cautious
-- **🟢 Normal** (confidence < 0.40): Low risk, no significant red flags
-
-## Scam Detection Red Flags
-
-The AI analyzes conversations for these patterns:
-
-1. Direct money transfer requests
-2. Creating urgency or pressure
-3. Impersonating officials, banks, or companies
-4. Requesting sensitive personal information (passwords, PINs)
-5. Too-good-to-be-true offers or prizes
-6. Fear-inducing language (threats of arrest, account closure)
-7. Unusual grammar or language errors
-8. Requests to download apps or click unknown links
-9. Claims of changed phone numbers from relatives/friends
-10. Social engineering techniques
-
-## Development
-
-### Running in Development Mode
-
-```bash
-export FLASK_ENV=development  # macOS/Linux
-set FLASK_ENV=development     # Windows
-python app.py
-```
-
-### Running in Production Mode
-
-```bash
-export FLASK_ENV=production  # macOS/Linux
-set FLASK_ENV=production     # Windows
-python app.py
-```
-
-### Accessing Swagger UI in Different Environments
-
-**Development**: `http://localhost:5000/api/docs`
-
-**Production**: Update `host` in `swagger_config.py` to your production domain:
-
-```python
-"host": "api.yourdomain.com",
-"schemes": ["https"]
-```
-
-## MongoDB Setup
-
-### Local MongoDB
-
-```bash
-# Install MongoDB and run
-mongod
-```
-
-### MongoDB Atlas (Cloud)
-
-1. Create account at https://www.mongodb.com/cloud/atlas
-2. Create a cluster
-3. Get connection string
-4. Update `MONGO_URI` in `.env`
-
-## Security Considerations
-
-- Never commit `.env` file to git
-- Use strong `SECRET_KEY` and `JWT_SECRET_KEY` in production
-- Enable MongoDB authentication
-- Use HTTPS in production
-- Implement rate limiting for API endpoints
-- Validate and sanitize all user inputs
-- **Swagger UI in Production**:
-  - Consider restricting Swagger UI access in production
-  - Use environment variables to enable/disable Swagger
-  - Add authentication for `/api/docs` endpoint if needed
-  - Update `swagger_config.py` to use production URLs
-
-### Production Swagger Configuration
-
-For production, update `swagger_config.py`:
-
-```python
-import os
-
-swagger_template = {
-    # ... other config ...
-    "host": os.getenv("API_HOST", "api.yourdomain.com"),
-    "schemes": ["https"],  # Use HTTPS only in production
-}
-
-# Optionally disable Swagger in production
-SWAGGER_ENABLED = os.getenv("SWAGGER_ENABLED", "true").lower() == "true"
-```
-
-Then in `app/__init__.py`:
-
-```python
-# Only initialize Swagger if enabled
-if app.config.get('SWAGGER_ENABLED', True):
-    swagger = Swagger(app, config=swagger_config, template=swagger_template)
-```
-
-## API Testing Tools
-
-### Using Swagger UI (Recommended)
-
-- Built-in interactive testing at `/api/docs`
-- No additional tools needed
-- Copy access tokens directly from responses
-
-### Using curl
-
-```bash
-# Register
-curl -X POST http://localhost:5000/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123","name":"Test User"}'
-
-# Analyze conversation
-curl -X POST http://localhost:5000/api/v1/scam/analyze \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your_token>" \
-  -d '{"conversation_text":"สวัสดีครับ ผมเป็นเจ้าหน้าที่ธนาคาร..."}'
-```
-
-### Using Postman
-
-1. Import OpenAPI spec from `http://localhost:5000/apispec.json`
-2. Set up authorization with Bearer token
-3. Test all endpoints with saved environments
-
-## License
-
-MIT
-
-## Support
-
-For issues and questions, please create an issue in the repository.
+<p align="center">
+  Made with ❤️ for a safer digital world
+</p>

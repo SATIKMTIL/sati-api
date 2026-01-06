@@ -39,7 +39,7 @@ Most endpoints require authentication. To use them:
 1. Register a new account at `/api/v1/auth/register`
 2. Login to get an access token at `/api/v1/auth/login`
 3. Click the **Authorize** button (🔒) at the top right
-4. Enter: `Bearer <your_access_token>`
+4. ใส่แค่ **Token** เท่านั้น (ไม่ต้องใส่ 'Bearer ' นำหน้า - ระบบจะเพิ่มให้อัตโนมัติ!)
 5. Click **Authorize** and close the dialog
 6. Now you can test authenticated endpoints
 
@@ -79,18 +79,18 @@ For issues or questions: https://github.com/your-org/sati-api
         },
         "termsOfService": "https://sati-api.com/terms"
     },
-    "host": "localhost:5000",
+    "host": "localhost:3000",
     "basePath": "/",
     "schemes": [
         "http",
         "https"
     ],
     "securityDefinitions": {
-        "Bearer": {
+        "BearerAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header",
-            "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+            "description": "ใส่แค่ Token เท่านั้น (ไม่ต้องใส่ 'Bearer ' นำหน้า ระบบจะเพิ่มให้อัตโนมัติ)"
         }
     },
     "tags": [

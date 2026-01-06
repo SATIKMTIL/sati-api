@@ -9,7 +9,7 @@ app = create_app(config_name)
 
 if __name__ == '__main__':
     # Get port from environment variable or use default
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 3000))
     host = os.getenv('HOST', '0.0.0.0')
     
     app.run(

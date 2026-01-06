@@ -25,7 +25,7 @@ def analyze_conversation():
     tags:
       - Scam Detection
     security:
-      - Bearer: []
+      - BearerAuth: []
     parameters:
       - in: body
         name: body
@@ -152,7 +152,7 @@ def get_history():
     tags:
       - Scam Detection
     security:
-      - Bearer: []
+      - BearerAuth: []
     parameters:
       - in: query
         name: limit
@@ -283,7 +283,7 @@ def get_report(report_id):
     tags:
       - Scam Detection
     security:
-      - Bearer: []
+      - BearerAuth: []
     parameters:
       - in: path
         name: report_id
@@ -392,7 +392,7 @@ def get_statistics():
     tags:
       - Scam Detection
     security:
-      - Bearer: []
+      - BearerAuth: []
     responses:
       200:
         description: Statistics retrieved successfully
