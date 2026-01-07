@@ -27,12 +27,8 @@ services:
       - .env
     environment:
       - FLASK_ENV=${FLASK_ENV:-development}
-      - MONGO_URI=mongodb://mongo:27017/sati_api
     ports:
       - "${PORT:-3000}:3000"
-    depends_on:
-      mongo:
-        condition: service_healthy
     networks:
       - sati-network
     healthcheck:
@@ -43,34 +39,6 @@ services:
       start_period: 40s
     volumes:
       - ./logs:/app/logs
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # ---------------------------------------------------------------------------
-  # MongoDB Database
-  # ---------------------------------------------------------------------------
-  mongo:
-    image: mongo:7.0
-    container_name: sati-mongo
-    restart: unless-stopped
-    environment:
-      - MONGO_INITDB_DATABASE=sati_api
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-      - mongo-config:/data/configdb
-    networks:
-      - sati-network
-    healthcheck:
-      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     logging:
       driver: json-file
       options:
@@ -107,40 +75,6 @@ services:
         max-file: "3"
     profiles:
       - production
-
-  # ---------------------------------------------------------------------------
-  # Mongo Express - Web-based MongoDB Admin (Development only)
-  # ---------------------------------------------------------------------------
-  mongo-express:
-    image: mongo-express:1.0
-    container_name: sati-mongo-express
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      - ME_CONFIG_MONGODB_SERVER=mongo
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-admin}
-      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:-admin123}
-    depends_on:
-      mongo:
-        condition: service_healthy
-    networks:
-      - sati-network
-    profiles:
-      - development
-      - tools
-
-# =============================================================================
-# Volumes
-# =============================================================================
-volumes:
-  mongo-data:
-    driver: local
-    name: sati-mongo-data
-  mongo-config:
-    driver: local
-    name: sati-mongo-config
 
 # =============================================================================
 # Networks
