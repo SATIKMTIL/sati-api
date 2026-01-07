@@ -4,7 +4,7 @@ from flasgger import swag_from
 from app.database.connection import get_database
 from app.database.repositories import ScamReportRepository
 from app.scam_detection.models import ScamReport
-from app.scam_detection.services import ScamDetectionService
+from app.scam_detection.services import ScamDetectionService, SpeechToTextService
 from app.utils.helpers import sanitize_input
 from app.middleware.rate_limit import rate_limit
 from flask import current_app
@@ -139,6 +139,173 @@ def analyze_conversation():
         return jsonify({
             'success': False,
             'message': 'Failed to analyze conversation',
+            'error': str(e)
+        }), 500
+
+
+@scam_bp.route('/analyze/sound', methods=['POST'])
+@jwt_required()
+@rate_limit(max_requests=5, window_seconds=60)  # 5 audio analyses per minute (more resource intensive)
+def analyze_sound():
+    """
+    Analyze audio file for scam patterns (Speech-to-Text + Analysis)
+    ---
+    tags:
+      - Scam Detection
+    security:
+      - BearerAuth: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - in: formData
+        name: audio
+        type: file
+        required: true
+        description: "Audio file to analyze (supported formats: mp3, wav, m4a, ogg, flac, webm)"
+      - in: formData
+        name: language
+        type: string
+        default: th-TH
+        required: false
+        description: "Language code for speech recognition (default: th-TH for Thai)"
+    responses:
+      200:
+        description: Analysis completed successfully
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            report_id:
+              type: string
+              example: 507f1f77bcf86cd799439011
+              description: Unique identifier for the report
+            transcribed_text:
+              type: string
+              example: สวัสดีครับ ผมเป็นเจ้าหน้าที่ธนาคาร...
+              description: Text transcribed from the audio file
+            analysis:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [danger, warning, normal]
+                  example: danger
+                  description: Risk level classification
+                confidence_score:
+                  type: number
+                  format: float
+                  minimum: 0.0
+                  maximum: 1.0
+                  example: 0.95
+                  description: Confidence score (0.0 = safe, 1.0 = definitely scam)
+                reason:
+                  type: string
+                  example: พบสัญญาณเตือนภัยหลายอย่าง เช่น การอ้างเป็นเจ้าหน้าที่ธนาคาร ขอโอนเงิน และสร้างความเร่งรีบ
+                  description: Detailed explanation in Thai
+                red_flags:
+                  type: array
+                  items:
+                    type: string
+                  example: ["อ้างว่าเป็นเจ้าหน้าที่ธนาคาร", "ขอโอนเงินโดยตรง", "สร้างความเร่งรีบและกดดัน"]
+                  description: List of detected scam indicators
+      400:
+        description: Validation error - No audio file provided or invalid format
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: No audio file provided
+      401:
+        description: Unauthorized - Invalid or missing token
+        schema:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: Invalid or expired token
+      500:
+        description: Analysis failed
+        schema:
+          $ref: '#/definitions/Error'
+    """
+    try:
+        user_id = get_jwt_identity()
+        
+        # Check if audio file is provided
+        if 'audio' not in request.files:
+            return jsonify({
+                'success': False,
+                'message': 'No audio file provided'
+            }), 400
+        
+        audio_file = request.files['audio']
+        
+        if audio_file.filename == '':
+            return jsonify({
+                'success': False,
+                'message': 'No audio file selected'
+            }), 400
+        
+        # Validate file extension
+        allowed_extensions = {'mp3', 'wav', 'm4a', 'ogg', 'flac', 'webm'}
+        filename = audio_file.filename
+        extension = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        
+        if extension not in allowed_extensions:
+            return jsonify({
+                'success': False,
+                'message': f'Invalid audio format. Allowed formats: {", ".join(allowed_extensions)}'
+            }), 400
+        
+        # Get optional language parameter
+        language = request.form.get('language', 'th-TH')
+        
+        # Convert speech to text
+        stt_service = SpeechToTextService()
+        conversation_text = stt_service.convert_audio_to_text(audio_file, language=language)
+        
+        # Sanitize the transcribed text
+        conversation_text = sanitize_input(conversation_text)
+        
+        # Validate transcribed text length
+        if len(conversation_text) < 10:
+            return jsonify({
+                'success': False,
+                'message': 'ข้อความที่แปลงจากเสียงสั้นเกินไป (ต้องมีอย่างน้อย 10 ตัวอักษร)'
+            }), 400
+        
+        # Perform scam analysis using Gemini AI
+        scam_service = ScamDetectionService(current_app.config['GOOGLE_API_KEY'])
+        analysis_result = scam_service.analyze_conversation(conversation_text)
+        
+        # Save report to database
+        db = get_database()
+        report_repo = ScamReportRepository(db)
+        report_id = report_repo.create_report(user_id, conversation_text, analysis_result)
+        
+        logger.info(f"Sound scam analysis completed for user {user_id}: {analysis_result['status']}")
+        
+        return jsonify({
+            'success': True,
+            'report_id': report_id,
+            'transcribed_text': conversation_text,
+            'analysis': analysis_result
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Sound scam analysis error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to analyze audio',
             'error': str(e)
         }), 500
 
